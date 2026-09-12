@@ -18,95 +18,245 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+
+        /* =========================
+           ЭКРАН "КАПЧИ"
+        ========================== */
+
+        #captchaScreen {
+            position: fixed;
+            inset: 0;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            background: #ffffff;
+
+            z-index: 100;
+        }
+
+        .captcha {
+            width: 304px;
+            height: 78px;
+
+            display: flex;
+            align-items: center;
+
+            padding: 12px;
+
+            background: #fafafa;
+            border: 1px solid #d5d5d5;
+            border-radius: 3px;
+
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .checkbox {
+            width: 28px;
+            height: 28px;
+
+            flex-shrink: 0;
+
+            margin-right: 12px;
+
+            border: 2px solid #555;
+            border-radius: 2px;
+
+            background: #ffffff;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-size: 22px;
+        }
+
+        .captchaText {
+            flex: 1;
+
+            font-size: 14px;
+            color: #222;
+        }
+
+        .captchaRight {
+            width: 55px;
+
+            text-align: center;
+
+            font-size: 9px;
+            color: #777;
+        }
+
+        .captchaLogo {
+            font-size: 24px;
+            margin-bottom: 2px;
+        }
+
+        /* =========================
+           ВИДЕО
+        ========================== */
+
+        #videoScreen {
+            position: fixed;
+            inset: 0;
+
+            display: none;
+
             background: #000;
         }
 
-        video {
-            position: fixed;
+        #video {
+            position: absolute;
             inset: 0;
 
             width: 100%;
             height: 100%;
 
             object-fit: contain;
+
             background: #000;
         }
 
-        #clickLayer {
-            position: fixed;
-            inset: 0;
+        /* Анимация галочки */
 
-            z-index: 10;
+        .checked {
+            border-color: transparent;
+            color: #22a447;
+        }
 
-            cursor: pointer;
+        .loading {
+            width: 23px;
+            height: 23px;
 
-            background: transparent;
+            border: 3px solid #ddd;
+            border-top-color: #4285f4;
+
+            border-radius: 50%;
+
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
         }
     </style>
 </head>
 
 <body>
 
-    <video
-        id="video"
-        autoplay
-        playsinline
-        preload="auto"
-    >
-        <source src="video.mp4" type="video/mp4">
-    </video>
+    <!-- Экран проверки -->
+    <div id="captchaScreen">
 
-    <div id="clickLayer"></div>
+        <div class="captcha" id="captcha">
+
+            <div class="checkbox" id="checkbox"></div>
+
+            <div class="captchaText">
+                Я не робот
+            </div>
+
+            <div class="captchaRight">
+                <div class="captchaLogo">
+                    ↻
+                </div>
+
+                проверка
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Видео -->
+    <div id="videoScreen">
+
+        <video
+            id="video"
+            preload="auto"
+            playsinline
+        >
+            <source src="video.mp4" type="video/mp4">
+        </video>
+
+    </div>
+
 
     <script>
+        const captcha = document.getElementById("captcha");
+        const checkbox = document.getElementById("checkbox");
+
+        const captchaScreen = document.getElementById("captchaScreen");
+        const videoScreen = document.getElementById("videoScreen");
+
         const video = document.getElementById("video");
-        const clickLayer = document.getElementById("clickLayer");
 
-        video.volume = 1;
-        video.muted = false;
 
-        async function tryAutoplayWithSound() {
-            try {
-                video.currentTime = 0;
-                video.muted = false;
+        captcha.addEventListener("click", async () => {
 
-                await video.play();
-
-                clickLayer.style.display = "none";
-            } catch (error) {
-
-                // Chrome заблокировал звук.
-                // Тогда запускаем видео без звука.
-                video.muted = true;
-
-                try {
-                    await video.play();
-                } catch (e) {
-                    console.log(e);
-                }
-            }
-        }
-
-        async function enableSound() {
-            video.pause();
-
-            video.currentTime = 0;
-            video.muted = false;
-            video.volume = 1;
+            /*
+             * ВАЖНО:
+             * fullscreen запрашиваем прямо во время клика,
+             * пока браузер считает это действием пользователя.
+             */
 
             try {
-                await video.play();
-
-                clickLayer.style.display = "none";
+                await document.documentElement.requestFullscreen();
             } catch (error) {
-                console.log(error);
+                console.log("Fullscreen не разрешён:", error);
             }
-        }
 
-        clickLayer.addEventListener("click", enableSound);
-        clickLayer.addEventListener("touchstart", enableSound);
 
-        window.addEventListener("load", tryAutoplayWithSound);
+            /* Показываем короткую загрузку */
+
+            checkbox.innerHTML = '<div class="loading"></div>';
+
+
+            setTimeout(async () => {
+
+                checkbox.innerHTML = "✓";
+                checkbox.classList.add("checked");
+
+
+                setTimeout(async () => {
+
+                    captchaScreen.style.display = "none";
+                    videoScreen.style.display = "block";
+
+
+                    /*
+                     * Видео начинается сначала
+                     */
+
+                    video.currentTime = 0;
+
+                    video.muted = false;
+                    video.volume = 1;
+
+
+                    try {
+
+                        await video.play();
+
+                    } catch (error) {
+
+                        console.log("Ошибка запуска видео:", error);
+
+                    }
+
+                }, 200);
+
+            }, 450);
+
+        });
     </script>
 
 </body>
