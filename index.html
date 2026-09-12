@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>OnlyFans</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+        }
+
+        video {
+            position: fixed;
+            inset: 0;
+
+            width: 100%;
+            height: 100%;
+
+            object-fit: contain;
+            background: #000;
+        }
+
+        #clickLayer {
+            position: fixed;
+            inset: 0;
+
+            z-index: 10;
+
+            cursor: pointer;
+
+            background: transparent;
+        }
+    </style>
+</head>
+
+<body>
+
+    <video
+        id="video"
+        autoplay
+        playsinline
+        preload="auto"
+    >
+        <source src="video.mp4" type="video/mp4">
+    </video>
+
+    <div id="clickLayer"></div>
+
+    <script>
+        const video = document.getElementById("video");
+        const clickLayer = document.getElementById("clickLayer");
+
+        video.volume = 1;
+        video.muted = false;
+
+        async function tryAutoplayWithSound() {
+            try {
+                video.currentTime = 0;
+                video.muted = false;
+
+                await video.play();
+
+                clickLayer.style.display = "none";
+            } catch (error) {
+
+                // Chrome заблокировал звук.
+                // Тогда запускаем видео без звука.
+                video.muted = true;
+
+                try {
+                    await video.play();
+                } catch (e) {
+                    console.log(e);
+                }
+            }
+        }
+
+        async function enableSound() {
+            video.pause();
+
+            video.currentTime = 0;
+            video.muted = false;
+            video.volume = 1;
+
+            try {
+                await video.play();
+
+                clickLayer.style.display = "none";
+            } catch (error) {
+                console.log(error);
+            }
+        }
+
+        clickLayer.addEventListener("click", enableSound);
+        clickLayer.addEventListener("touchstart", enableSound);
+
+        window.addEventListener("load", tryAutoplayWithSound);
+    </script>
+
+</body>
+</html>
